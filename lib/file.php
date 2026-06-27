@@ -3,6 +3,25 @@
 
 if (!defined('UP_DIR')) define('UP_DIR', realpath(__DIR__ . '/../up'));
 
+// 安全文件名：只保留合法字符，去除路径穿越/控制字符/Windows保留名
+function file_safename($name) {
+	// 去除路径分隔符和空字节
+	$name = str_replace(array('\\', '/', "\0"), '', $name);
+	// 去除控制字符（0x00-0x1F、0x7F）
+	$name = preg_replace('/[\x00-\x1f\x7f]/', '', $name);
+	// 只保留：中/日/韩/字母/数字/空格/常见符号
+	$name = preg_replace('/[^\x{4e00}-\x{9fff}\x{3040}-\x{309f}\x{30a0}-\x{30ff}\x{ac00}-\x{d7af}a-zA-Z0-9._\-()\[\]{}~!@#$%^&+= ,]/u', '', $name);
+	// 去除末尾的点/空格（Windows 会静默删除）
+	$name = rtrim($name, '. ');
+	// 限制长度 200
+	if (mb_strlen($name) > 200) $name = mb_substr($name, 0, 200);
+	// Windows 保留名处理
+	if (preg_match('/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i', $name)) {
+		$name = '_' . $name;
+	}
+	return $name;
+}
+
 // 安全路径：将相对路径转为绝对路径，防止穿越
 function file_safepath($rel) {
 	$rel = str_replace('\\', '/', $rel);
@@ -32,6 +51,8 @@ function file_typeicon($ext) {
 		'pdf' => 'doc', 'doc' => 'doc', 'docx' => 'doc', 'xls' => 'doc', 'xlsx' => 'doc', 'ppt' => 'doc', 'pptx' => 'doc',
 		'zip' => 'zip', 'rar' => 'zip', '7z' => 'zip', 'tar' => 'zip', 'gz' => 'zip',
 		'php' => 'code', 'html' => 'code', 'css' => 'code', 'js' => 'code', 'json' => 'code', 'xml' => 'code', 'toml' => 'code', 'ini' => 'code', 'txt' => 'code',
+		'md' => 'code', 'yml' => 'code', 'yaml' => 'code', 'cfg' => 'code', 'env' => 'code', 'sql' => 'code',
+		'exe' => 'exe', 'msi' => 'exe', 'bin' => 'exe',
 	);
 	$ext = strtolower($ext);
 	return isset($map[$ext]) ? $map[$ext] : 'file';
@@ -80,6 +101,13 @@ function file_list($rel) {
 
 // 新建文件夹
 function file_mkdir($rel) {
+	// 对末级目录名消毒
+	$parts = explode('/', trim($rel, '/'));
+	$last = array_pop($parts);
+	$last = file_safename($last);
+	if ($last === '') return false;
+	$parts[] = $last;
+	$rel = implode('/', $parts);
 	$abs = file_safepath($rel);
 	if ($abs === false) return false;
 	if (file_exists($abs)) return false;
@@ -107,11 +135,13 @@ function file_del($rel) {
 
 // 重命名
 function file_ren($rel, $newname) {
+	$newname = file_safename($newname);
+	if ($newname === '') return false;
 	$abs = file_safepath($rel);
 	if ($abs === false) return false;
 	if (!file_exists($abs)) return false;
 	$dir = dirname($abs);
-	$dst = $dir . '/' . basename($newname);
+	$dst = $dir . '/' . $newname;
 	if (file_exists($dst)) return false;
 	return rename($abs, $dst);
 }
@@ -144,7 +174,8 @@ function file_paste_src($srcRel, $dstRel, $type) {
 	$dstAbs = file_safepath($dstRel);
 	if ($srcAbs === false || $dstAbs === false) return false;
 	if (!file_exists($srcAbs)) return false;
-	$basename = basename($srcAbs);
+	$basename = file_safename(basename($srcAbs));
+	if ($basename === '') return false;
 	$dst = $dstAbs . '/' . $basename;
 	$dst = file_uniquepath($dst);
 	if ($type === 'cut') {
@@ -161,7 +192,8 @@ function file_uniquepath($path) {
 	$ext = pathinfo($path, PATHINFO_EXTENSION);
 	$i = 1;
 	while (file_exists($dir . '/' . $name . '(' . $i . ').' . $ext)) $i++;
-	return $dir . '/' . $name . '(' . $i . ').' . $ext;
+	$dst = $dir . '/' . $name . '(' . $i . ').' . $ext;
+	return $dst;
 }
 
 function file_recursive_copy($src, $dst) {

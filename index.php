@@ -2,9 +2,20 @@
 // 系统入口 - 路由分发 + 主页面
 
 require_once __DIR__ . '/lib/init.php';
-auth_check();
 
+// act=down 公开下载，不校验登录
 $act = isset($_GET['act']) ? $_GET['act'] : '';
+if ($act === 'down') {
+	require_once __DIR__ . '/lib/file.php';
+	require_once __DIR__ . '/lib/log.php';
+	require_once __DIR__ . '/lib/down.php';
+	$path = isset($_GET['path']) ? $_GET['path'] : '';
+	log_add('download', $path, '');
+	down_file($path);
+	exit;
+}
+
+auth_check();
 
 // 路由分发
 if ($act !== '') {
@@ -103,14 +114,6 @@ if ($act !== '') {
 			}
 		}
 		echo json_encode($result);
-		exit;
-	}
-
-	if ($act === 'down') {
-		require_once __DIR__ . '/lib/down.php';
-		$path = isset($_GET['path']) ? $_GET['path'] : '';
-		log_add('download', $path, '');
-		down_file($path);
 		exit;
 	}
 

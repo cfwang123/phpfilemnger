@@ -26,7 +26,7 @@
 	};
 	F.escHtml = function(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
 	F.ficon = function(icon) {
-		var m = {folder:'fa-folder', img:'fa-file-image', video:'fa-file-video', audio:'fa-file-audio', doc:'fa-file-pdf', zip:'fa-file-archive', code:'fa-file-code', cfg:'fa-file-code', file:'fa-file-o'};
+		var m = {folder:'fa-folder', img:'fa-file-image', video:'fa-file-video', audio:'fa-file-audio', doc:'fa-file-pdf', zip:'fa-file-archive', code:'fa-file-code', cfg:'fa-file-code', exe:'fa-gears', file:'fa-file'};
 		return m[icon] || m.file;
 	};
 	F.sizeTxt = function(s) {
@@ -152,7 +152,7 @@
 				+ '<div class="sep"></div>'
 				+ '<button class="btn btnsm btnzip" title="下载当前目录为ZIP包"><i class="fa-solid fa-file-archive"></i>下载当前目录为ZIP包</button>'
 				+ '</div>'
-				+ '<div class="addrbar"><div class="crumb"></div><input class="edt esearch" placeholder="搜索..."></div>'
+				+ '<div class="addrbar"><div class="crumb"></div></div>'
 				+ '<div class="winbody"><div class="filearea"><div class="filehead"></div><div class="filelist detail scroll"></div></div></div>'
 				+ '<div class="winstatus"><span class="stitem">0 个项目</span><div class="spacer"></div><span class="stitem stpath">up/</span></div>';
 			list.appendChild(win.el);
@@ -316,7 +316,7 @@
 				var dlBtn = isDir ? '<button class="btndl" title="下载为ZIP"><i class="fa-solid fa-file-archive"></i> ZIP</button>' : '<button class="btndl" title="下载"><i class="fa-solid fa-download"></i> 下载</button>';
 				var delBtn = '<button class="btndel" title="删除"><i class="fa-solid fa-trash"></i> 删除</button>';
 				row.innerHTML =
-					'<div class="col colname"><span class="ficon ' + iconCls + '"><i class="fa-solid ' + iconFa + '"></i></span> ' + F.escHtml(v.name) + '</div>'
+					'<div class="col colname"><span class="ficon ' + iconCls + '"><i class="fa-solid ' + iconFa + '"></i></span> <span class="fntxt" title="' + F.escHtml(v.name).replace(/"/g,'&quot;') + '">' + F.escHtml(v.name) + '</span></div>'
 					+ '<div class="col colsize">' + F.escHtml(v.sizetxt) + '</div>'
 					+ '<div class="col coltype">' + (isDir ? '文件夹' : F.escHtml(v.ext).toUpperCase()) + '</div>'
 					+ '<div class="col coldate">' + F.escHtml(v.time) + '</div>'
@@ -341,7 +341,7 @@
 							var name = v.name;
 							window.open('index.php?act=zip&path=' + encodeURIComponent(full) + '&name=' + encodeURIComponent(name) + '.zip');
 						} else {
-							window.open('index.php?act=down&path=' + encodeURIComponent(full));
+							window.open('index.php?act=down&dl=1&path=' + encodeURIComponent(full));
 						}
 					};
 					// 删除按钮点击
@@ -400,17 +400,16 @@
 
 				// 大图标视图：图片显示缩略图
 				var isImg = isLarge && !isDir && /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(v.name);
+				var escName = F.escHtml(v.name);
 				if (isLarge) {
-					var label = v.name.length > 18 ? v.name.slice(0,16) + '…' : v.name;
 					if (isImg) {
 						var full = win.path ? win.path + '/' + v.name : v.name;
-						item.innerHTML = '<div class="fthumb" style="background-image:url(&quot;index.php?act=down&amp;path=' + encodeURIComponent(full) + '&quot;)"></div><div class="fname">' + F.escHtml(label) + '</div>';
+						item.innerHTML = '<div class="fthumb" style="background-image:url(&quot;index.php?act=down&amp;path=' + encodeURIComponent(full) + '&quot;)"></div><div class="fname" title="' + escName.replace(/"/g,'&quot;') + '">' + escName + '</div>';
 					} else {
-						item.innerHTML = '<div class="ficon ' + iconCls + '"><i class="fa-solid ' + iconFa + '"></i></div><div class="fname">' + F.escHtml(label) + '</div>';
+						item.innerHTML = '<div class="ficon ' + iconCls + '"><i class="fa-solid ' + iconFa + '"></i></div><div class="fname" title="' + escName.replace(/"/g,'&quot;') + '">' + escName + '</div>';
 					}
 				} else {
-					var label = v.name.length > 14 ? v.name.slice(0,12) + '…' : v.name;
-					item.innerHTML = '<div class="ficon ' + iconCls + '"><i class="fa-solid ' + iconFa + '"></i></div><div class="fname">' + F.escHtml(label) + '</div>';
+					item.innerHTML = '<div class="ficon ' + iconCls + '"><i class="fa-solid ' + iconFa + '"></i></div><div class="fname" title="' + escName.replace(/"/g,'&quot;') + '">' + escName + '</div>';
 				}
 				area.appendChild(item);
 
@@ -559,6 +558,7 @@
 	FM.win.setView = function(win, view) {
 		win.view = view;
 		FM.mgr.view = view;
+		localStorage.setItem('fm_view', view);
 		win.el.querySelector('.btnvdetail').className = 'btn btnsm btnvdetail' + (view==='detail'?' active':'');
 		win.el.querySelector('.btnvicon').className = 'btn btnsm btnvicon' + (view==='icon'?' active':'');
 		win.el.querySelector('.btnvlarge').className = 'btn btnsm btnvlarge' + (view==='large'?' active':'');
@@ -880,7 +880,7 @@
 
 		switch (act) {
 			case 'down':
-				window.open('index.php?act=down&path=' + encodeURIComponent(path));
+				window.open('index.php?act=down&dl=1&path=' + encodeURIComponent(path));
 				break;
 			case 'preview':
 				FM.preview.open(path);
@@ -1009,7 +1009,7 @@
 				FM.win.create(path, win.view);
 				break;
 			case 'copylink':
-				var link = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/') + 'index.php?act=down&path=' + encodeURIComponent(path);
+				var link = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/') + 'index.php?act=down&dl=1&path=' + encodeURIComponent(path);
 				navigator.clipboard.writeText(link).then(function(){
 					F.toast('链接已复制', 'ok');
 				}).catch(function(){
@@ -1392,6 +1392,10 @@
 
 	// ===== 7. 初始化 =====
 	FM.init = function() {
+		// 读取保存的视图偏好
+		var savedView = localStorage.getItem('fm_view');
+		if (savedView) FM.mgr.view = savedView;
+
 		// 根据 URL hash 读取初始路径
 		var hash = location.hash.replace(/^#/, '');
 		var initPath = '';

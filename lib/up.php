@@ -37,13 +37,19 @@ function up_file($dirRel) {
 			$results[] = array('name' => $name, 'ok' => false, 'err' => '临时文件不存在');
 			continue;
 		}
+		// 对文件名消毒
+		$name = file_safename($name);
+		if ($name === '') {
+			$results[] = array('name' => $names[$i], 'ok' => false, 'err' => '文件名不合法');
+			continue;
+		}
 		// 禁止上传 .php 文件
 		if (stripos($name, '.php') !== false) {
 			$results[] = array('name' => $name, 'ok' => false, 'err' => '禁止上传 PHP 文件');
 			continue;
 		}
 
-		$dst = $absDir . '/' . basename($name);
+		$dst = $absDir . '/' . $name;
 		$dst = file_uniquepath($dst);
 		if (move_uploaded_file($tmp, $dst)) {
 			$results[] = array('name' => basename($dst), 'ok' => true, 'size' => $size);

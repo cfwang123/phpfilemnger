@@ -2,3 +2,5 @@
 /fontawesome
 /up
 *.db
+*.lock
+AGENTS.md

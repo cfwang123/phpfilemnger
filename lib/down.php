@@ -20,7 +20,7 @@ function down_mime($ext) {
 	return isset($map[$ext]) ? $map[$ext] : 'application/octet-stream';
 }
 
-// 单个文件下载
+// 单个文件下载（支持 Range 断点续传）
 function down_file($rel) {
 	$abs = file_safepath($rel);
 	if ($abs === false || !file_exists($abs) || is_dir($abs)) {
@@ -31,11 +31,44 @@ function down_file($rel) {
 	$ext = pathinfo($abs, PATHINFO_EXTENSION);
 	$name = basename($abs);
 	$size = filesize($abs);
+	$mime = down_mime($ext);
 
-	header('Content-Type: ' . down_mime($ext));
-	header('Content-Length: ' . $size);
-	header('Content-Disposition: attachment; filename="' . $name . '"');	header('Accept-Ranges: bytes');
-	readfile($abs);
+	header('Content-Type: ' . $mime);
+	header('Accept-Ranges: bytes');
+
+	// 解析 Range 头
+	$range = isset($_SERVER['HTTP_RANGE']) ? $_SERVER['HTTP_RANGE'] : '';
+	if ($range !== '' && preg_match('/bytes=(\d+)-(\d*)/', $range, $m)) {
+		$start = intval($m[1]);
+		$end = $m[2] !== '' ? intval($m[2]) : $size - 1;
+		if ($start >= $size || $end >= $size) {
+			header('HTTP/1.1 416 Range Not Satisfiable');
+			header('Content-Range: bytes */' . $size);
+			exit;
+		}
+		$len = $end - $start + 1;
+		header('HTTP/1.1 206 Partial Content');
+		header('Content-Range: bytes ' . $start . '-' . $end . '/' . $size);
+		header('Content-Length: ' . $len);
+		if (isset($_GET['dl']) && $_GET['dl'] === '1') {
+			header('Content-Disposition: attachment; filename="' . $name . '"');
+		}
+		$fh = fopen($abs, 'rb');
+		fseek($fh, $start);
+		$left = $len;
+		while ($left > 0) {
+			$read = min($left, 8192);
+			echo fread($fh, $read);
+			$left -= $read;
+		}
+		fclose($fh);
+	} else {
+		header('Content-Length: ' . $size);
+		if (isset($_GET['dl']) && $_GET['dl'] === '1') {
+			header('Content-Disposition: attachment; filename="' . $name . '"');
+		}
+		readfile($abs);
+	}
 	exit;
 }
 
