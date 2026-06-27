@@ -1,0 +1,13 @@
+[system]
+site_name = "Web文件管理系统"
+
+# 用户配置
+[[users]]
+name = "admin"
+pass = "123456"
+level = "admin"
+
+[[users]]
+name = "user"
+pass = "123456"
+level = "normal"
