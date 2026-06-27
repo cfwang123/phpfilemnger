@@ -1,5 +1,4 @@
 RewriteEngine On
-RewriteBase /
 
 # 禁止访问系统目录
 RewriteRule ^lib/ - [R=403,L,NC]

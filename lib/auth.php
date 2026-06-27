@@ -22,7 +22,7 @@ function auth_login($name, $pass) {
 function auth_login_keep($name, $pass) {
 	if (!auth_login($name, $pass)) return false;
 	// 生成 token，存入 DB，设置 cookie（2 个月）
-	$token = bin2hex(random_bytes(32));
+	$token = function_exists('random_bytes') ? bin2hex(random_bytes(32)) : md5(mt_rand() . microtime() . uniqid('', true)) . md5(mt_rand() . microtime() . uniqid('', true));
 	$expire = date('Y-m-d H:i:s', time() + 5184000); // 60天
 	require_once __DIR__ . '/db.php';
 	db_exec("DELETE FROM auth_tokens WHERE user = ?", array($name));

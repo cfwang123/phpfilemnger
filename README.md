@@ -40,7 +40,7 @@
 
 | 层 | 技术 |
 | --- | --- |
-| 后端 | PHP 8+（`ZipArchive`、`PDO`、`random_bytes`） |
+| 后端 | PHP 5.5+（`ZipArchive`、`PDO`、`openssl`） |
 | 数据库 | SQLite（PDO，自动建表，零配置） |
 | 配置 | TOML（[leonelquinteros/php-toml](https://github.com/leonelquinteros/php-toml)） |
 | 前端 | 原生 JavaScript（IIFE 模块，无框架） |
