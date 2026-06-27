@@ -4,3 +4,7 @@
 *.db
 *.lock
 AGENTS.md
+*.7z
+*.zip
+*.rar
+*.gz
