@@ -19,5 +19,5 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/log.php';
 
 // 定义常量
-define('ROOT_DIR', realpath(__DIR__ . '/..'));
+define('ROOT_DIR', dirname(__DIR__));
 define('UP_DIR', ROOT_DIR . '/up');

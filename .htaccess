@@ -4,7 +4,7 @@ RewriteEngine On
 RewriteRule ^lib/ - [R=403,L,NC]
 RewriteRule ^vendor/ - [R=403,L,NC]
 RewriteRule ^data/ - [R=403,L,NC]
-RewriteRule ^up/ - [R=403,L,NC]
+RewriteRule ^up/.*\.php$ - [R=403,L,NC]
 
 # 禁止访问敏感文件类型
 RewriteRule \.(htaccess|htpasswd|json|lock|md|gitignore|db|toml)$ - [R=403,L,NC]

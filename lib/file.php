@@ -1,7 +1,7 @@
 <?php
 // 文件操作 API
 
-if (!defined('UP_DIR')) define('UP_DIR', realpath(__DIR__ . '/../up'));
+if (!defined('UP_DIR')) define('UP_DIR', file_fromfspath(realpath(__DIR__ . '/../up')));
 
 // 安全文件名：只保留合法字符，去除路径穿越/控制字符/Windows保留名
 function file_safename($name) {
@@ -22,26 +22,24 @@ function file_safename($name) {
 	return $name;
 }
 
-// 将 UTF-8 路径转为文件系统编码（Windows 中文版 GBK）
+// 将 UTF-8 路径转为文件系统编码（根据配置）
 function file_tofspath($path) {
-	if (DIRECTORY_SEPARATOR !== '\\') return $path; // 非 Windows 不用转
-	$enc = mb_detect_encoding($path, 'UTF-8,GBK,GB2312,ISO-8859-1', true);
-	if ($enc === 'UTF-8') {
-		$conv = mb_convert_encoding($path, 'GBK', 'UTF-8');
-		return $conv !== false ? $conv : $path;
-	}
-	return $path;
+	if (DIRECTORY_SEPARATOR !== '\\') return $path;
+	$enc = conf_get('system.fs_encoding', 'UTF-8');
+	if ($enc === 'UTF-8') return $path;
+	// 显式转换：调用方保证传入 UTF-8
+	$conv = mb_convert_encoding($path, $enc, 'UTF-8');
+	return $conv !== false ? $conv : $path;
 }
 
-// 将文件系统编码转为 UTF-8
+// 将文件系统编码转为 UTF-8（根据配置）
 function file_fromfspath($path) {
 	if (DIRECTORY_SEPARATOR !== '\\') return $path;
-	$enc = mb_detect_encoding($path, 'UTF-8,GBK,GB2312,ISO-8859-1', true);
-	if ($enc !== 'UTF-8') {
-		$conv = mb_convert_encoding($path, 'UTF-8', $enc);
-		return $conv !== false ? $conv : $path;
-	}
-	return $path;
+	$enc = conf_get('system.fs_encoding', 'UTF-8');
+	if ($enc === 'UTF-8') return $path;
+	if (mb_check_encoding($path, 'UTF-8')) return $path;
+	$conv = mb_convert_encoding($path, 'UTF-8', $enc);
+	return $conv !== false ? $conv : $path;
 }
 
 // 安全路径：将相对路径转为绝对路径，防止穿越
@@ -61,7 +59,7 @@ function file_safepath($rel) {
 		}
 	}
 	$abs = UP_DIR . (count($clean) ? '/' . implode('/', $clean) : '');
-	// 转为文件系统编码（Windows GBK）
+	// 转为文件系统编码（根据配置）
 	$abs = file_tofspath($abs);
 	return $abs;
 }
@@ -95,7 +93,7 @@ function file_list($rel) {
 	$abs = file_safepath($rel);
 	if ($abs === false) return false;
 	$items = array();
-	$dh = opendir($abs);
+	$dh = @opendir($abs);
 	if (!$dh) return false;
 	while (($n = readdir($dh)) !== false) {
 		if ($n === '.' || $n === '..') continue;
@@ -103,9 +101,10 @@ function file_list($rel) {
 		if (stripos($n, '.php') !== false) continue;
 		// 文件名转 UTF-8 输出（json_encode 要求）
 		$nOut = file_fromfspath($n);
-		$p = $abs . '/' . $n;
-		$isDir = is_dir($p);
-		$st = stat($p);
+		$nFs = file_tofspath($n);
+		$p = $abs . '/' . $nFs;
+		$isDir = @is_dir($p);
+		$st = @stat($p);
 		$items[] = array(
 			'name' => $nOut,
 			'type' => $isDir ? 'dir' : 'file',
@@ -150,8 +149,12 @@ function file_del($rel) {
 
 // 内部递归删除（使用绝对路径，避免编码问题）
 function file_del_byabs($abs) {
+	if (is_link($abs)) {
+		// 软链接/目录交接点：只删除链接本身，不删目标内容
+		return rmdir($abs);
+	}
 	if (is_dir($abs)) {
-		$dh = opendir($abs);
+		$dh = @opendir($abs);
 		if ($dh) {
 			while (($n = readdir($dh)) !== false) {
 				if ($n === '.' || $n === '..') continue;
@@ -232,7 +235,7 @@ function file_uniquepath($path) {
 function file_recursive_copy($src, $dst) {
 	if (is_dir($src)) {
 		if (!file_exists($dst)) mkdir($dst, 0755, true);
-		$dh = opendir($src);
+		$dh = @opendir($src);
 		if (!$dh) return false;
 		while (($n = readdir($dh)) !== false) {
 			if ($n === '.' || $n === '..') continue;
@@ -267,13 +270,14 @@ function file_info($rel) {
 	if ($isDir) {
 		$fcnt = 0;
 		$fsize = 0;
-		$dh = opendir($abs);
+		$dh = @opendir($abs);
 		if ($dh) {
 			while (($n = readdir($dh)) !== false) {
 				if ($n === '.' || $n === '..') continue;
 				$fcnt++;
-				$fp = $abs . '/' . $n;
-				if (is_file($fp)) $fsize += filesize($fp);
+				$nFs = file_tofspath($n);
+				$fp = $abs . '/' . $nFs;
+				if (@is_file($fp)) $fsize += @filesize($fp);
 			}
 			closedir($dh);
 		}

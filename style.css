@@ -162,7 +162,7 @@ a:hover {text-decoration:underline;}
 .filelist.large .fitem:hover {background:var(--hov);}
 .filelist.large .fitem.sel {background:var(--sel);}
 .filelist.large .fitem.dragfolder {background:rgba(37,99,235,.1);outline:2px solid #2563eb;}
-.filelist.large .fitem .fthumb {width:96px;height:80px;border-radius:4px;background-size:contain;background-repeat:no-repeat;background-position:center;}
+.filelist.large .fitem .fthumb {width:96px;height:80px;border-radius:4px;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#f0f0f0;}
 .filelist.large .fitem .ficon {font-size:56px;height:64px;display:flex;align-items:center;justify-content:center;}
 .filelist.large .fitem .ficon.folder {color:#f59e0b;}
 .filelist.large .fitem .ficon.img {color:#10b981;}

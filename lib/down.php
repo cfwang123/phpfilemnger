@@ -112,7 +112,7 @@ function down_zip($paths, $zipname) {
 function down_zip_add($zip, $abs, $entry) {
 	if (is_dir($abs)) {
 		$zip->addEmptyDir($entry);
-		$dh = opendir($abs);
+		$dh = @opendir($abs);
 		if ($dh) {
 			while (($n = readdir($dh)) !== false) {
 				if ($n === '.' || $n === '..') continue;

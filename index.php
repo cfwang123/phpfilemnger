@@ -126,7 +126,7 @@ if ($act !== '') {
 			if (is_dir($abs)) {
 				// 空路径=打包根目录全部内容
 				if ($rel === '') {
-					$dh = opendir(UP_DIR);
+					$dh = @opendir(UP_DIR);
 					if ($dh) {
 						while (($n = readdir($dh)) !== false) {
 							if ($n === '.' || $n === '..') continue;

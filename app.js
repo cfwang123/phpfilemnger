@@ -25,6 +25,24 @@
 		xhr.send(s.slice(1));
 	};
 	F.escHtml = function(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+	F.lazyObs = null;
+	F.initLazy = function() {
+		if (F.lazyObs) return;
+		if (!window.IntersectionObserver) return;
+		F.lazyObs = new IntersectionObserver(function(entries) {
+			entries.forEach(function(entry) {
+				if (entry.isIntersecting) {
+					var el = entry.target;
+					var src = el.getAttribute('data-src');
+					if (src) {
+						el.style.backgroundImage = 'url("' + src.replace(/&quot;/g, '"') + '")';
+						el.removeAttribute('data-src');
+					}
+					F.lazyObs.unobserve(el);
+				}
+			});
+		}, {rootMargin: '200px 0px 200px 0px'});
+	};
 	F.ficon = function(icon) {
 		var m = {folder:'fa-folder', img:'fa-file-image', video:'fa-file-video', audio:'fa-file-audio', doc:'fa-file-pdf', zip:'fa-file-archive', code:'fa-file-code', cfg:'fa-file-code', exe:'fa-gears', file:'fa-file'};
 		return m[icon] || m.file;
@@ -237,6 +255,7 @@
 
 		area.className = 'filelist ' + (isDetail ? 'detail scroll' : isLarge ? 'large scroll' : 'icon scroll');
 		area.innerHTML = '';
+		if (F.lazyObs) F.lazyObs.disconnect();
 
 		// 排序（文件夹始终在前）
 		var s = win.sort || {col:'name',dir:'asc'};
@@ -404,7 +423,7 @@
 				if (isLarge) {
 					if (isImg) {
 						var full = win.path ? win.path + '/' + v.name : v.name;
-						item.innerHTML = '<div class="fthumb" style="background-image:url(&quot;index.php?act=down&amp;path=' + encodeURIComponent(full) + '&quot;)"></div><div class="fname" title="' + escName.replace(/"/g,'&quot;') + '">' + escName + '</div>';
+						item.innerHTML = '<div class="fthumb" data-src="index.php?act=down&amp;path=' + encodeURIComponent(full) + '"></div><div class="fname" title="' + escName.replace(/"/g,'&quot;') + '">' + escName + '</div>';
 					} else {
 						item.innerHTML = '<div class="ficon ' + iconCls + '"><i class="fa-solid ' + iconFa + '"></i></div><div class="fname" title="' + escName.replace(/"/g,'&quot;') + '">' + escName + '</div>';
 					}
@@ -443,6 +462,21 @@
 					item.ondragover = function(e){ e.preventDefault(); this.classList.add('dragfolder'); };
 					item.ondragleave = function(){ this.classList.remove('dragfolder'); };
 				}
+			}
+		}
+		// 懒加载：观察可视区内缩略图
+		F.initLazy();
+		if (isLarge) {
+			if (F.lazyObs) {
+				area.querySelectorAll('.fthumb[data-src]').forEach(function(el) {
+					F.lazyObs.observe(el);
+				});
+			} else {
+				// 不支持 IntersectionObserver 的浏览器直接全部加载
+				area.querySelectorAll('.fthumb[data-src]').forEach(function(el) {
+					var src = el.getAttribute('data-src');
+					if (src) { el.style.backgroundImage = 'url("' + src + '")'; el.removeAttribute('data-src'); }
+				});
 			}
 		}
 	};
