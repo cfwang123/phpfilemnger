@@ -22,6 +22,28 @@ function file_safename($name) {
 	return $name;
 }
 
+// 将 UTF-8 路径转为文件系统编码（Windows 中文版 GBK）
+function file_tofspath($path) {
+	if (DIRECTORY_SEPARATOR !== '\\') return $path; // 非 Windows 不用转
+	$enc = mb_detect_encoding($path, 'UTF-8,GBK,GB2312,ISO-8859-1', true);
+	if ($enc === 'UTF-8') {
+		$conv = mb_convert_encoding($path, 'GBK', 'UTF-8');
+		return $conv !== false ? $conv : $path;
+	}
+	return $path;
+}
+
+// 将文件系统编码转为 UTF-8
+function file_fromfspath($path) {
+	if (DIRECTORY_SEPARATOR !== '\\') return $path;
+	$enc = mb_detect_encoding($path, 'UTF-8,GBK,GB2312,ISO-8859-1', true);
+	if ($enc !== 'UTF-8') {
+		$conv = mb_convert_encoding($path, 'UTF-8', $enc);
+		return $conv !== false ? $conv : $path;
+	}
+	return $path;
+}
+
 // 安全路径：将相对路径转为绝对路径，防止穿越
 function file_safepath($rel) {
 	$rel = str_replace('\\', '/', $rel);
@@ -39,6 +61,8 @@ function file_safepath($rel) {
 		}
 	}
 	$abs = UP_DIR . (count($clean) ? '/' . implode('/', $clean) : '');
+	// 转为文件系统编码（Windows GBK）
+	$abs = file_tofspath($abs);
 	return $abs;
 }
 
@@ -77,14 +101,16 @@ function file_list($rel) {
 		if ($n === '.' || $n === '..') continue;
 		// 隐藏 .php 后缀文件
 		if (stripos($n, '.php') !== false) continue;
+		// 文件名转 UTF-8 输出（json_encode 要求）
+		$nOut = file_fromfspath($n);
 		$p = $abs . '/' . $n;
 		$isDir = is_dir($p);
 		$st = stat($p);
 		$items[] = array(
-			'name' => $n,
+			'name' => $nOut,
 			'type' => $isDir ? 'dir' : 'file',
-			'ext' => $isDir ? '' : pathinfo($n, PATHINFO_EXTENSION),
-			'icon' => $isDir ? 'folder' : file_typeicon(pathinfo($n, PATHINFO_EXTENSION)),
+			'ext' => $isDir ? '' : pathinfo($nOut, PATHINFO_EXTENSION),
+			'icon' => $isDir ? 'folder' : file_typeicon(pathinfo($nOut, PATHINFO_EXTENSION)),
 			'size' => $isDir ? 0 : $st['size'],
 			'sizetxt' => $isDir ? '' : file_size($st['size']),
 			'time' => date('Y-m-d H:i', $st['mtime']),
@@ -119,12 +145,17 @@ function file_del($rel) {
 	$abs = file_safepath($rel);
 	if ($abs === false) return false;
 	if (!file_exists($abs)) return false;
+	return file_del_byabs($abs);
+}
+
+// 内部递归删除（使用绝对路径，避免编码问题）
+function file_del_byabs($abs) {
 	if (is_dir($abs)) {
 		$dh = opendir($abs);
 		if ($dh) {
 			while (($n = readdir($dh)) !== false) {
 				if ($n === '.' || $n === '..') continue;
-				file_del($rel . '/' . $n);
+				file_del_byabs($abs . '/' . $n);
 			}
 			closedir($dh);
 		}
@@ -141,7 +172,7 @@ function file_ren($rel, $newname) {
 	if ($abs === false) return false;
 	if (!file_exists($abs)) return false;
 	$dir = dirname($abs);
-	$dst = $dir . '/' . $newname;
+	$dst = $dir . '/' . file_tofspath($newname);
 	if (file_exists($dst)) return false;
 	return rename($abs, $dst);
 }
@@ -174,9 +205,11 @@ function file_paste_src($srcRel, $dstRel, $type) {
 	$dstAbs = file_safepath($dstRel);
 	if ($srcAbs === false || $dstAbs === false) return false;
 	if (!file_exists($srcAbs)) return false;
-	$basename = file_safename(basename($srcAbs));
+	// basename 是 GBK，先转 UTF-8 再消毒
+	$basename = file_fromfspath(basename($srcAbs));
+	$basename = file_safename($basename);
 	if ($basename === '') return false;
-	$dst = $dstAbs . '/' . $basename;
+	$dst = $dstAbs . '/' . file_tofspath($basename);
 	$dst = file_uniquepath($dst);
 	if ($type === 'cut') {
 		return rename($srcAbs, $dst) ? $basename : false;
@@ -218,8 +251,10 @@ function file_info($rel) {
 	if (!file_exists($abs)) return false;
 	$isDir = is_dir($abs);
 	$st = stat($abs);
+	// 确保文件名 UTF-8 编码
+	$name = file_fromfspath(basename($abs));
 	$info = array(
-		'name' => basename($abs),
+		'name' => $name,
 		'type' => $isDir ? 'dir' : 'file',
 		'isdir' => $isDir,
 		'ext' => $isDir ? '' : pathinfo($abs, PATHINFO_EXTENSION),

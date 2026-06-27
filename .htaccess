@@ -4,14 +4,7 @@ RewriteEngine On
 RewriteRule ^lib/ - [R=403,L,NC]
 RewriteRule ^vendor/ - [R=403,L,NC]
 RewriteRule ^data/ - [R=403,L,NC]
-RewriteRule ^fontawesome/ - [R=403,L,NC]
-RewriteRule ^viewer1\.11\.6/ - [R=403,L,NC]
 RewriteRule ^up/ - [R=403,L,NC]
-
-# 禁止直接访问 PHP 文件（入口文件除外）
-RewriteCond %{REQUEST_URI} !^/fs/index\.php$
-RewriteCond %{REQUEST_URI} !^/fs/login\.php$
-RewriteRule \.php$ - [R=403,L,NC]
 
 # 禁止访问敏感文件类型
 RewriteRule \.(htaccess|htpasswd|json|lock|md|gitignore|db|toml)$ - [R=403,L,NC]

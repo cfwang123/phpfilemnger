@@ -8,7 +8,7 @@ function auth_init() {
 
 function auth_login($name, $pass) {
 	auth_init();
-	$cfg = conf_load(__DIR__ . '/../config.toml');
+	$cfg = conf_load(__DIR__ . '/../config.php');
 	if (!$cfg || !isset($cfg['users'])) return false;
 	foreach ($cfg['users'] as $u) {
 		if ($u['name'] === $name && $u['pass'] === $pass) {
@@ -40,7 +40,7 @@ function auth_cookie_login() {
 	if (!$row || strtotime($row['expire']) < time()) return;
 	$_SESSION['user'] = array('name' => $row['user'], 'level' => '');
 	// 加载配置获取 level
-	$cfg = conf_load(__DIR__ . '/../config.toml');
+	$cfg = conf_load(__DIR__ . '/../config.php');
 	if ($cfg && isset($cfg['users'])) {
 		foreach ($cfg['users'] as $u) {
 			if ($u['name'] === $row['user']) {

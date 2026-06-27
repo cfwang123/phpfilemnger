@@ -37,7 +37,8 @@ function up_file($dirRel) {
 			$results[] = array('name' => $name, 'ok' => false, 'err' => '临时文件不存在');
 			continue;
 		}
-		// 对文件名消毒
+		// 对文件名消毒（$_FILES 来自系统编码如 GBK，先转 UTF-8）
+		$name = file_fromfspath($name);
 		$name = file_safename($name);
 		if ($name === '') {
 			$results[] = array('name' => $names[$i], 'ok' => false, 'err' => '文件名不合法');
@@ -49,10 +50,11 @@ function up_file($dirRel) {
 			continue;
 		}
 
-		$dst = $absDir . '/' . $name;
+		$nameFs = file_tofspath($name);
+		$dst = $absDir . '/' . $nameFs;
 		$dst = file_uniquepath($dst);
 		if (move_uploaded_file($tmp, $dst)) {
-			$results[] = array('name' => basename($dst), 'ok' => true, 'size' => $size);
+			$results[] = array('name' => $name, 'ok' => true, 'size' => $size);
 			$okCount++;
 		} else {
 			$results[] = array('name' => $name, 'ok' => false, 'err' => '移动文件失败');

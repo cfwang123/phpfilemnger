@@ -10,11 +10,11 @@
 - 目录浏览（文件夹优先排序，支持名称/大小/类型/日期排序）
 - 新建文件夹、重命名、删除（支持递归删除非空目录）
 - 复制 / 剪切 / 粘贴（含重名自动加序号）
-- 单文件下载、多文件/目录 ZIP 流式压缩下载（PHP 8 原生 `ZipArchive`）
+- 单文件下载、多文件/目录 ZIP 流式压缩下载（PHP 原生 `ZipArchive`）
 
 ### 文件预览
 - 图片：集成 [Viewer.js](https://github.com/fengyuanchen/viewerjs)，支持缩放/旋转/全屏
-- 视频：`<video>` 内联播放（mp4/mkv/avi/webm/mov/wmv/flv）
+- 视频：`<video>` 内联播放（mp4/mkv/avi/webm/mov/wmv/flv），支持进度拖动（Range 206）
 - 音频：`<audio>` 内联播放（mp3/wav/flac/ogg/aac）
 - 文本：代码/配置文件预览（txt/html/css/js/json/xml/toml/md/ini/yaml/csv/log 等）
 - 图片自动返回宽高信息
@@ -31,18 +31,19 @@
 
 ### 安全与管理
 - 用户登录认证（Session + Cookie Token 双模式，支持「保持登录」60 天免登录）
-- 多用户/角色（admin / normal，通过 TOML 配置）
+- 多用户/角色（admin / normal，通过 PHP 数组配置）
 - 路径穿越防护（`file_safepath` 手动解析 `..`，禁止越出根目录）
 - 禁止上传/列表显示 `.php` 文件
+- 文件名消毒（控制字符/特殊字符/Win 保留名过滤）
 - 操作日志审计（登录/上传/下载/删除/重命名/复制/剪切/打包），含用户、IP、时间，支持分页查询
 
 ## 技术栈
 
 | 层 | 技术 |
 | --- | --- |
-| 后端 | PHP 5.5+（`ZipArchive`、`PDO`、`openssl`） |
+| 后端 | PHP 5.5+（`ZipArchive`、`PDO`、SQLite） |
 | 数据库 | SQLite（PDO，自动建表，零配置） |
-| 配置 | TOML（[leonelquinteros/php-toml](https://github.com/leonelquinteros/php-toml)） |
+| 配置 | PHP 数组（`config.php`，零依赖） |
 | 前端 | 原生 JavaScript（IIFE 模块，无框架） |
 | 图片预览 | Viewer.js 1.11.6 |
 | 图标 | Font Awesome |
@@ -55,44 +56,33 @@
 ├── login.php          # 登录页面 + 登录验证 API
 ├── app.js             # 前端全部逻辑（工具函数 / 窗口 / 右键 / 上传 / 预览 / 日志）
 ├── style.css          # 全局样式
-├── config.toml        # 用户与站点配置
-├── composer.json      # 依赖声明
+├── .htaccess          # Apache 重写规则
+├── config.php         # 用户与站点配置
 ├── lib/
-│   ├── init.php       # 公共初始化（时区/自动加载/常量）
-│   ├── conf.php       # TOML 配置解析
+│   ├── init.php       # 公共初始化（时区/常量）
+│   ├── conf.php       # 配置加载
 │   ├── db.php         # SQLite 封装（params/logs/auth_tokens 三表）
 │   ├── auth.php       # 认证（登录/登出/Token 保持登录）
-│   ├── file.php       # 文件操作 API（含路径安全过滤）
+│   ├── file.php       # 文件操作 API（含路径安全过滤、文件名消毒）
 │   ├── up.php         # 上传处理（多文件、禁 PHP）
-│   ├── down.php       # 下载 + ZIP 流式压缩
+│   ├── down.php       # 下载 + ZIP 流式压缩 + Range 206
 │   └── log.php        # 操作日志记录与查询
 ├── viewer1.11.6/      # Viewer.js 资源
-├── vendor/            # Composer 依赖
-└── documents/         # 截图等文档
+├── documents/         # 截图等文档
+└── 改进建议.md         # 项目改进规划
 ```
 
 ## 安装与运行
 
 ### 环境要求
-- PHP 8.0 及以上（需启用 `pdo_sqlite`、`zip` 扩展）
+- PHP 5.5 及以上（需启用 `pdo_sqlite`、`zip` 扩展）
 - Web 服务器（Apache / Nginx / IIS，或直接用 PHP 内置服务器）
 
 ### 步骤
-1. 克隆仓库到 Web 服务器根目录：
-   ```bash
-   git clone <repo-url>
-   ```
-2. 安装依赖（若已包含 `vendor/` 可跳过）：
-   ```bash
-   composer install
-   ```
-3. 准备 Font Awesome（`fontawesome/css/all.min.css`），放置于项目根目录（已在 `.gitignore` 中忽略）。
-4. 创建文件存储目录 `up/`（已忽略，需自行创建并保证 Web 进程可读写）：
-   ```bash
-   mkdir up
-   chmod 755 up
-   ```
-5. 访问 `http://localhost/` 即可。
+1. 将项目放到 Web 服务器文档根目录，或创建虚拟主机指向项目目录。
+2. 准备 Font Awesome（`fontawesome/css/all.min.css`），放置于项目根目录（已在 `.gitignore` 中忽略）。
+3. 创建文件存储目录 `up/`（已忽略，需自行创建并保证 Web 进程可读写）。
+4. 访问 `http://localhost/fs/` 即可。
 
 ### 快速试用（PHP 内置服务器）
 ```bash
@@ -105,29 +95,27 @@ php -S 127.0.0.1:8000
 | `admin` | `123456` | 管理员 |
 | `user` | `123456` | 普通用户 |
 
-> 首次运行会自动创建 `data.db`（SQLite）并建表。请务必在生产环境修改 `config.toml` 中的默认密码。
+> 首次运行会自动创建 `data.db`（SQLite）并建表。请务必在生产环境修改 `config.php` 中的默认密码。
 
 ## 配置说明
 
-`config.toml`：
+`config.php`：
 
-```toml
-[system]
-site_name = "Web文件管理系统"
-
-[[users]]
-name = "admin"
-pass = "123456"
-level = "admin"
-
-[[users]]
-name = "user"
-pass = "123456"
-level = "normal"
+```php
+<?php
+return array(
+    'system' => array(
+        'site_name' => 'Web文件管理系统',
+    ),
+    'users' => array(
+        array('name' => 'admin', 'pass' => '123456', 'level' => 'admin'),
+        array('name' => 'user', 'pass' => '123456', 'level' => 'normal'),
+    ),
+);
 ```
 
-- `site_name`：站点名称
-- `[[users]]`：用户数组，每个用户包含 `name`（用户名）、`pass`（密码）、`level`（`admin` 或 `normal`）
+- `system.site_name`：站点名称
+- `users`：用户数组，每个用户包含 `name`（用户名）、`pass`（密码）、`level`（`admin` 或 `normal`）
 
 ## API 一览
 
@@ -138,7 +126,7 @@ level = "normal"
 | `list` | GET | 列出目录内容 |
 | `info` | GET | 获取文件/目录详情 |
 | `read` | GET | 读取文本文件内容 |
-| `down` | GET | 下载单个文件 |
+| `down` | GET | 下载单个文件（支持 Range 断点续传） |
 | `zip` | GET | 多文件/目录 ZIP 打包下载 |
 | `mkdir` | POST | 新建文件夹 |
 | `del` | POST | 删除文件/目录 |
@@ -152,7 +140,7 @@ level = "normal"
 - 默认密码仅用于演示，**生产环境务必修改**。
 - 文件存储根目录 `up/` 不可执行 PHP（系统已禁止上传 `.php` 并在列表中隐藏）。
 - 建议在 Web 服务器层面进一步禁止 `up/` 目录的 PHP 解析。
-- `data.db` 与 `config.toml` 建议通过 Web 服务器配置禁止外部访问。
+- `data.db` 与 `config.php` 建议通过 Web 服务器配置禁止外部访问。
 
 ## 许可
 

@@ -4,9 +4,6 @@
 // 设置时区
 date_default_timezone_set('Asia/Shanghai');
 
-// Composer 自动加载
-require_once __DIR__ . '/../vendor/autoload.php';
-
 // 加载库文件（按依赖顺序）
 require_once __DIR__ . '/conf.php';
 require_once __DIR__ . '/db.php';
