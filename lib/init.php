@@ -20,4 +20,4 @@ require_once __DIR__ . '/log.php';
 
 // 定义常量
 define('ROOT_DIR', dirname(__DIR__));
-define('UP_DIR', ROOT_DIR . '/up');
+define('UP_DIR', ROOT_DIR);

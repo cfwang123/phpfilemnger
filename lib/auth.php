@@ -8,7 +8,7 @@ function auth_init() {
 
 function auth_login($name, $pass) {
 	auth_init();
-	$cfg = conf_load(__DIR__ . '/../config.php');
+	$cfg = conf_load(__DIR__ . '/config.php');
 	if (!$cfg || !isset($cfg['users'])) return false;
 	foreach ($cfg['users'] as $u) {
 		if ($u['name'] === $name && $u['pass'] === $pass) {
@@ -19,14 +19,49 @@ function auth_login($name, $pass) {
 	return false;
 }
 
+function _auth_token_dir() {
+	$dir = __DIR__ . '/_tokens';
+	if (!is_dir($dir)) @mkdir($dir, 0700, true);
+	return $dir;
+}
+
+function _auth_token_save($token, $user, $expire) {
+	$f = _auth_token_dir() . '/' . $token . '.json';
+	file_put_contents($f, json_encode(array('user' => $user, 'expire' => $expire)), LOCK_EX);
+}
+
+function _auth_token_load($token) {
+	$f = _auth_token_dir() . '/' . $token . '.json';
+	if (!file_exists($f)) return null;
+	$data = json_decode(file_get_contents($f), true);
+	if (!$data) return null;
+	if (strtotime($data['expire']) < time()) {
+		@unlink($f);
+		return null;
+	}
+	return $data;
+}
+
+function _auth_token_delete($token) {
+	$f = _auth_token_dir() . '/' . $token . '.json';
+	@unlink($f);
+}
+
+function _auth_token_delete_by_user($user) {
+	$dir = _auth_token_dir();
+	foreach (glob($dir . '/*.json') as $f) {
+		$data = json_decode(file_get_contents($f), true);
+		if ($data && $data['user'] === $user) @unlink($f);
+	}
+}
+
 function auth_login_keep($name, $pass) {
 	if (!auth_login($name, $pass)) return false;
-	// 生成 token，存入 DB，设置 cookie（2 个月）
+	// 生成 token，存入文件，设置 cookie（2 个月）
 	$token = function_exists('random_bytes') ? bin2hex(random_bytes(32)) : md5(mt_rand() . microtime() . uniqid('', true)) . md5(mt_rand() . microtime() . uniqid('', true));
 	$expire = date('Y-m-d H:i:s', time() + 5184000); // 60天
-	require_once __DIR__ . '/db.php';
-	db_exec("DELETE FROM auth_tokens WHERE user = ?", array($name));
-	db_exec("INSERT INTO auth_tokens (token, user, expire) VALUES (?, ?, ?)", array($token, $name, $expire));
+	_auth_token_delete_by_user($name);
+	_auth_token_save($token, $name, $expire);
 	setcookie('fm_token', $token, time() + 5184000, '/', '', false, true);
 	return true;
 }
@@ -35,15 +70,14 @@ function auth_cookie_login() {
 	if (session_status() === PHP_SESSION_NONE) session_start();
 	if (isset($_SESSION['user'])) return; // 已有 session
 	if (!isset($_COOKIE['fm_token'])) return;
-	require_once __DIR__ . '/db.php';
-	$row = db_one("SELECT user, expire FROM auth_tokens WHERE token = ?", array($_COOKIE['fm_token']));
-	if (!$row || strtotime($row['expire']) < time()) return;
-	$_SESSION['user'] = array('name' => $row['user'], 'level' => '');
+	$data = _auth_token_load($_COOKIE['fm_token']);
+	if (!$data) return;
+	$_SESSION['user'] = array('name' => $data['user'], 'level' => '');
 	// 加载配置获取 level
-	$cfg = conf_load(__DIR__ . '/../config.php');
+	$cfg = conf_load(__DIR__ . '/config.php');
 	if ($cfg && isset($cfg['users'])) {
 		foreach ($cfg['users'] as $u) {
-			if ($u['name'] === $row['user']) {
+			if ($u['name'] === $data['user']) {
 				$_SESSION['user']['level'] = $u['level'];
 				break;
 			}
@@ -55,7 +89,7 @@ function auth_check() {
 	auth_init();
 	auth_cookie_login();
 	if (!isset($_SESSION['user'])) {
-		header('Location: login.php');
+		header('Location: index.php');
 		exit;
 	}
 }
@@ -68,8 +102,10 @@ function auth_user() {
 
 function auth_logout() {
 	auth_init();
-	unset($_SESSION['user']);
-	setcookie('fm_token', '', time() - 3600, '/', '', false, true);
-	require_once __DIR__ . '/db.php';
-	db_exec("DELETE FROM auth_tokens WHERE token = ?", array(isset($_COOKIE['fm_token']) ? $_COOKIE['fm_token'] : ''));
+	$_SESSION = array();
+	$params = session_get_cookie_params();
+	setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+	setcookie('fm_token', '', time() - 42000, '/', '', false, true);
+	@session_destroy();
+	if (isset($_COOKIE['fm_token'])) _auth_token_delete($_COOKIE['fm_token']);
 }

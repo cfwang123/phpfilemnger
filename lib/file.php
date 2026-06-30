@@ -1,7 +1,7 @@
 <?php
 // 文件操作 API
 
-if (!defined('UP_DIR')) define('UP_DIR', file_fromfspath(realpath(__DIR__ . '/../up')));
+if (!defined('UP_DIR')) define('UP_DIR', file_fromfspath(realpath(__DIR__ . '/..')));
 
 // 安全文件名：只保留合法字符，去除路径穿越/控制字符/Windows保留名
 function file_safename($name) {
@@ -88,15 +88,33 @@ function file_size($bytes) {
 	return $bytes . ' B';
 }
 
+// 从配置读取忽略文件列表
+function file_ignore_list() {
+	return conf_get('system.ignore_files', array('lib', 'index.php', '.htaccess', '.gitignore'));
+}
+
+// 检查路径是否命中忽略列表（路径首段在忽略列表中则视为忽略）
+function file_is_ignored($rel) {
+	$rel = str_replace('\\', '/', $rel);
+	$rel = trim($rel, '/');
+	$first = explode('/', $rel)[0];
+	return in_array($first, file_ignore_list());
+}
+
 // 列出目录
-function file_list($rel) {
+function file_list($rel, $ignore = array()) {
 	$abs = file_safepath($rel);
 	if ($abs === false) return false;
+	if (!is_dir($abs)) {
+		@mkdir($abs, 0755, true);
+		return array();
+	}
 	$items = array();
 	$dh = @opendir($abs);
 	if (!$dh) return false;
 	while (($n = readdir($dh)) !== false) {
 		if ($n === '.' || $n === '..') continue;
+		if (in_array($n, $ignore)) continue;
 		// 隐藏 .php 后缀文件
 		if (stripos($n, '.php') !== false) continue;
 		// 文件名转 UTF-8 输出（json_encode 要求）
@@ -143,6 +161,7 @@ function file_mkdir($rel) {
 function file_del($rel) {
 	$abs = file_safepath($rel);
 	if ($abs === false) return false;
+	clearstatcache(true, $abs);
 	if (!file_exists($abs)) return false;
 	return file_del_byabs($abs);
 }

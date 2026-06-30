@@ -2,7 +2,6 @@
 // 文件上传处理
 
 function up_file($dirRel) {
-	require_once __DIR__ . '/file.php';
 
 	$absDir = file_safepath($dirRel);
 	if ($absDir === false) return array('ok' => false, 'err' => '无效的目录路径');

@@ -1,6 +1,6 @@
 ---
 description: 代码风格指南，供 AI 模型在修改代码时遵循。
-alwaysApply: true
+alwaysApply: false
 ---
 
 # 编码规范

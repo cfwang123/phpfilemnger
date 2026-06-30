@@ -10,7 +10,7 @@ function conf_load($path) {
 function conf_get($key = null, $default = null) {
 	static $cfg = null;
 	if ($cfg === null) {
-		$file = __DIR__ . '/../config.php';
+		$file = __DIR__ . '/config.php';
 		$cfg = file_exists($file) ? require $file : array();
 	}
 	if ($key === null) return $cfg;

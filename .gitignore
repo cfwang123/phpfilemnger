@@ -3,6 +3,7 @@
 /up
 *.db
 *.lock
+/lib/_tokens/
 AGENTS.md
 *.7z
 *.zip

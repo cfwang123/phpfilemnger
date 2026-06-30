@@ -1,8 +1,6 @@
 <?php
 // 文件下载 & ZIP 流式压缩
 
-require_once __DIR__ . '/file.php';
-
 // MIME 类型映射
 function down_mime($ext) {
 	$map = array(

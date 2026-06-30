@@ -1,15 +1,27 @@
 RewriteEngine On
 
 # 禁止访问系统目录
-RewriteRule ^lib/ - [R=403,L,NC]
+RewriteRule ^lib/.*\.php$ - [R=403,L,NC]
 RewriteRule ^vendor/ - [R=403,L,NC]
 RewriteRule ^data/ - [R=403,L,NC]
 RewriteRule ^up/.*\.php$ - [R=403,L,NC]
 
 # 禁止访问敏感文件类型
-RewriteRule \.(htaccess|htpasswd|json|lock|md|gitignore|db|toml)$ - [R=403,L,NC]
+RewriteRule \.(htaccess|gitignore)$ - [R=403,L,NC]
 
 # 禁止访问 up 目录下的 PHP 文件
+
+# 所有文件默认 UTF-8 编码
+AddDefaultCharset UTF-8
+
+# MIME 类型（补全 Apache 可能不认识的类型）
+AddType text/plain .md .toml .yaml .yml .env .log .cfg .ini
+AddType text/css .css
+AddType text/javascript .js .mjs
+AddType text/html .html .htm
+AddType image/svg+xml .svg
+AddType application/json .json
+AddType application/xml .xml
 
 # 禁止列出目录
 Options -Indexes
