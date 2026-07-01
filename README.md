@@ -1,111 +1,122 @@
-# Web 文件管理系统
+# Web File Manager
 
-一个基于 PHP + 原生 JavaScript 的轻量级 Web 文件管理系统，提供类桌面（MDI 多窗口）的文件管理体验，支持文件预览、上传、下载、压缩包导出、操作日志审计等。
+English | [中文](README.zh.md)
 
-![首页](documents/indexpage.png)
+A lightweight PHP + vanilla JavaScript web file management system with a desktop-like (MDI multi-window) experience. Supports file preview, upload, download, ZIP export, operation logging, and more.
 
-## 功能特性
+![Home Page](documents/indexpage.png)
 
-### 文件操作
-- 目录浏览（文件夹优先排序，支持名称/大小/类型/日期排序）
-- 新建文件夹、重命名、删除（支持递归删除非空目录）
-- 复制 / 剪切 / 粘贴（含重名自动加序号）
-- 单文件下载、多文件/目录 ZIP 流式压缩下载（PHP 原生 `ZipArchive`）
+## Features
 
-### 文件预览
-- 图片：集成 [Viewer.js](https://github.com/fengyuanchen/viewerjs)，支持缩放/旋转/全屏
-- 视频：`<video>` 内联播放（mp4/mkv/avi/webm/mov/wmv/flv），支持进度拖动（Range 206）
-- 音频：`<audio>` 内联播放（mp3/wav/flac/ogg/aac）
-- 文本：代码/配置文件预览（txt/html/css/js/json/xml/toml/md/ini/yaml/csv/log 等）
-- 图片自动返回宽高信息
+### File Operations
+- Directory browsing (folders sorted first, sortable by name/size/type/date)
+- Create folder, rename, delete (recursive deletion of non-empty directories)
+- Copy / Cut / Paste (with auto-incrementing names for duplicates)
+- Single file download, multi-file/directory ZIP streaming compression (native PHP `ZipArchive`)
 
-### 界面交互
-- **多窗口 MDI**：背景窗口 + 可拖拽/可调整大小/可最大化的浮动窗口
-- **三种视图**：详细列表、图标、大图标（图片显示缩略图）
-- **右键菜单**：根据上下文（空白/文件/文件夹/多选）动态生成
-- **拖拽**：文件项拖入文件夹移动；本地文件拖入窗口上传
-- **框选**：空白区域鼠标拖拽框选多个文件
-- **面包屑导航**：支持点击跳转、点击空白编辑路径
-- **快捷键**：`Ctrl+A` 全选、`Ctrl+C/X/V` 复制剪切粘贴、`Delete` 删除、`F2` 重命名
-- **上传面板**：多文件并发上传，实时进度，可取消
+### File Preview
+- Images: integrated [Viewer.js](https://github.com/fengyuanchen/viewerjs) with zoom/rotate/fullscreen
+- Video: `<video>` inline playback (mp4/mkv/avi/webm/mov/wmv/flv) with Range 206 seek support
+- Audio: `<audio>` inline playback (mp3/wav/flac/ogg/aac)
+- Text: code/config file preview (txt/html/css/js/json/xml/toml/md/ini/yaml/csv/log etc.)
+- Image dimensions automatically returned
 
-### 安全与管理
-- 用户登录认证（Session + Cookie Token 双模式，支持「保持登录」60 天免登录）
-- 多用户/角色（admin / normal，通过 PHP 数组配置）
-- 路径穿越防护（`file_safepath` 手动解析 `..`，禁止越出根目录）
-- 禁止上传/列表显示 `.php` 文件
-- 文件名消毒（控制字符/特殊字符/Win 保留名过滤）
-- 操作日志审计（登录/上传/下载/删除/重命名/复制/剪切/打包），含用户、IP、时间，支持分页查询
+### UI / Interaction
+- **Multi-window MDI**: background window + draggable/resizable/maximizable floating windows
+- **Three view modes**: detail list, icon, large icon (image thumbnails)
+- **Context menu**: dynamically generated based on context (blank/file/folder/multi-select)
+- **Drag & drop**: drag files into folders to move; drag local files into windows to upload
+- **Rubber-band selection**: click and drag on blank area to select multiple files
+- **Breadcrumb navigation**: click to navigate, click blank area to edit path
+- **Keyboard shortcuts**: `Ctrl+A` select all, `Ctrl+C/X/V` copy/cut/paste, `Delete` delete, `F2` rename
+- **Upload panel**: concurrent multi-file upload with real-time progress and cancel
+- **Lazy thumbnail loading**: only images in the viewport are loaded (IntersectionObserver)
 
-## 技术栈
+### Security & Administration
+- User login authentication (Session + Cookie Token dual mode, "keep logged in" for 60 days)
+- Multi-user/roles (admin / normal, configured via PHP array)
+- Path traversal protection (`file_safepath` manually resolves `..`, prevents escaping root directory)
+- `.php` file upload blocked and hidden from listings
+- Filename sanitization (control characters / special characters / Windows reserved names filtered)
+- Operation log audit (login/upload/download/delete/rename/copy/cut/zip) with user, IP, timestamp, pagination
 
-| 层 | 技术 |
+### Internationalization (i18n)
+- Bilingual support: English (default) and Chinese
+- Language files defined as PHP arrays in `lib/lang_en.php` and `lib/lang_zh.php`
+- Language preference stored in session + cookie
+- Switch language via the System menu (gear icon) in the top bar
+
+## Tech Stack
+
+| Layer | Technology |
 | --- | --- |
-| 后端 | PHP 5.5+（`ZipArchive`、`PDO`、SQLite） |
-| 数据库 | SQLite（PDO，自动建表，零配置） |
-| 配置 | PHP 数组（`config.php`，零依赖） |
-| 前端 | 原生 JavaScript（IIFE 模块，无框架） |
-| 图片预览 | Viewer.js 1.11.6 |
-| 图标 | Font Awesome |
+| Backend | PHP 5.5+ (`ZipArchive`) |
+| Storage | File-based (logs as JSON Lines in `lib/_logs/`, params in `config.php`) |
+| Config | PHP array (`config.php`, zero dependencies) |
+| Frontend | Vanilla JavaScript (IIFE module, no framework) |
+| Image preview | Viewer.js 1.11.6 |
+| Icons | Font Awesome |
 
-## 目录结构
+## Directory Structure
 
 ```
 .
-├── index.php          # 入口：路由分发 + 主页面 HTML
-├── login.php          # 登录页面 + 登录验证 API
-├── app.js             # 前端全部逻辑（工具函数 / 窗口 / 右键 / 上传 / 预览 / 日志）
-├── style.css          # 全局样式
-├── .htaccess          # Apache 重写规则
-├── config.php         # 用户与站点配置
+├── index.php              # Entry: routing + main page HTML
+├── app.js                 # Frontend logic (utils / windows / context menu / upload / preview / log)
+├── style.css              # Global styles
+├── .htaccess              # Apache rewrite rules
+├── config.php             # User & site configuration
 ├── lib/
-│   ├── init.php       # 公共初始化（时区/常量）
-│   ├── conf.php       # 配置加载
-│   ├── db.php         # SQLite 封装（params/logs/auth_tokens 三表）
-│   ├── auth.php       # 认证（登录/登出/Token 保持登录）
-│   ├── file.php       # 文件操作 API（含路径安全过滤、文件名消毒）
-│   ├── up.php         # 上传处理（多文件、禁 PHP）
-│   ├── down.php       # 下载 + ZIP 流式压缩 + Range 206
-│   └── log.php        # 操作日志记录与查询
-├── viewer1.11.6/      # Viewer.js 资源
-├── documents/         # 截图等文档
-└── 改进建议.md         # 项目改进规划
+│   ├── init.php           # Common initialization (timezone / constants)
+│   ├── conf.php           # Config loading + param_get() + i18n language functions
+│   ├── auth.php           # Authentication (login/logout/token keep-login)
+│   ├── file.php           # File operations API (path safety, filename sanitization)
+│   ├── up.php             # Upload handler (multi-file, blocks .php)
+│   ├── down.php           # Download + ZIP streaming + Range 206
+│   ├── log.php            # Operation log recording & querying
+│   ├── lang_en.php        # English language pack (default)
+│   └── lang_zh.php        # Chinese language pack
+├── viewer1.11.6/          # Viewer.js assets
+└── documents/             # Screenshots & docs
 ```
 
-## 安装与运行
+## Installation & Usage
 
-### 环境要求
-- PHP 5.5 及以上（需启用 `pdo_sqlite`、`zip` 扩展）
-- Web 服务器（Apache / Nginx / IIS，或直接用 PHP 内置服务器）
+### Requirements
+- PHP 5.5+ (requires `zip` extension; `mbstring` recommended for non-UTF-8 filesystem encoding)
+- Web server (Apache / Nginx / IIS, or PHP built-in server)
 
-### 步骤
-1. 将项目放到 Web 服务器文档根目录，或创建虚拟主机指向项目目录。
-2. 准备 Font Awesome（`fontawesome/css/all.min.css`），放置于项目根目录（已在 `.gitignore` 中忽略）。
-3. 创建文件存储目录 `up/`（已忽略，需自行创建并保证 Web 进程可读写）。
-4. 访问 `http://localhost/fs/` 即可。
+### Steps
+1. Place the project in your web server document root, or create a virtual host pointing to the project directory.
+2. Install Font Awesome (`fontawesome/css/all.min.css`) in the project root (already in `.gitignore`).
+3. Create the file storage directory `up/` (gitignored, must be writable by the web process).
+4. Visit `http://localhost/fs/` to start.
 
-### 快速试用（PHP 内置服务器）
+### Quick Start (PHP Built-in Server)
 ```bash
 php -S 127.0.0.1:8000
 ```
-浏览器打开 `http://127.0.0.1:8000/`，使用默认账号登录：
+Open `http://127.0.0.1:8000/` in your browser. Default credentials:
 
-| 用户名 | 密码 | 角色 |
+| Username | Password | Role |
 | --- | --- | --- |
-| `admin` | `123456` | 管理员 |
-| `user` | `123456` | 普通用户 |
+| `admin` | `123456` | Admin |
+| `user` | `123456` | Normal |
 
-> 首次运行会自动创建 `data.db`（SQLite）并建表。请务必在生产环境修改 `config.php` 中的默认密码。
+> Logs are written to `lib/_logs/YYYY-MM.log` (JSON Lines). Params can be added under `params` in `config.php` and read via `param_get('key')`. Be sure to change default passwords in `config.php` for production.
 
-## 配置说明
+## Configuration
 
-`config.php`：
+`config.php`:
 
 ```php
 <?php
 return array(
     'system' => array(
-        'site_name' => 'Web文件管理系统',
+        'site_name' => 'Web File Manager',
+        'fs_encoding' => 'UTF-8',
+        'delete_confirm_file' => true,
+        'delete_confirm_dir' => true,
     ),
     'users' => array(
         array('name' => 'admin', 'pass' => '123456', 'level' => 'admin'),
@@ -114,34 +125,38 @@ return array(
 );
 ```
 
-- `system.site_name`：站点名称
-- `users`：用户数组，每个用户包含 `name`（用户名）、`pass`（密码）、`level`（`admin` 或 `normal`）
+- `system.site_name`: Site name
+- `system.fs_encoding`: Filesystem encoding (`UTF-8` or `GBK` for older Windows)
+- `system.delete_confirm_file`: Show confirmation dialog when deleting files
+- `system.delete_confirm_dir`: Show confirmation dialog when deleting directories
+- `users`: User array, each with `name`, `pass`, `level` (`admin` or `normal`)
 
-## API 一览
+## API Reference
 
-所有接口统一由 `index.php?act=xxx` 分发，返回 JSON。
+All endpoints are routed via `index.php?act=xxx` and return JSON.
 
-| act | 方法 | 说明 |
+| act | Method | Description |
 | --- | --- | --- |
-| `list` | GET | 列出目录内容 |
-| `info` | GET | 获取文件/目录详情 |
-| `read` | GET | 读取文本文件内容 |
-| `down` | GET | 下载单个文件（支持 Range 断点续传） |
-| `zip` | GET | 多文件/目录 ZIP 打包下载 |
-| `mkdir` | POST | 新建文件夹 |
-| `del` | POST | 删除文件/目录 |
-| `ren` | POST | 重命名 |
-| `paste` | POST | 粘贴（复制/剪切） |
-| `upload` | POST | 上传文件（multipart） |
-| `log` | GET | 查询操作日志（分页 + 过滤） |
+| `list` | GET | List directory contents |
+| `info` | GET | Get file/directory details |
+| `read` | GET | Read text file content |
+| `down` | GET | Download single file (supports Range resume) |
+| `zip` | GET | Multi-file/directory ZIP download |
+| `mkdir` | POST | Create new folder |
+| `del` | POST | Delete file/directory |
+| `ren` | POST | Rename |
+| `paste` | POST | Paste (copy/cut) |
+| `upload` | POST | Upload files (multipart) |
+| `log` | GET | Query operation logs (paginated + filtered) |
+| `lang` | GET | Switch language (`?act=lang&l=en` or `&l=zh`) |
 
-## 安全注意事项
+## Security Notes
 
-- 默认密码仅用于演示，**生产环境务必修改**。
-- 文件存储根目录 `up/` 不可执行 PHP（系统已禁止上传 `.php` 并在列表中隐藏）。
-- 建议在 Web 服务器层面进一步禁止 `up/` 目录的 PHP 解析。
-- `data.db` 与 `config.php` 建议通过 Web 服务器配置禁止外部访问。
+- Default passwords are for demo only. **Change them in production.**
+- The file storage root `up/` should not execute PHP (system blocks `.php` uploads and hides them).
+- Recommend disabling PHP parsing in the `up/` directory at the web server level.
+- `lib/_logs/`, `lib/_tokens/`, and `config.php` should be protected from external access via web server config.
 
-## 许可
+## License
 
-本项目仅供学习与内部使用。
+For learning and internal use only.

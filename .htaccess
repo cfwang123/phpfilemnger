@@ -2,6 +2,7 @@ RewriteEngine On
 
 # 禁止访问系统目录
 RewriteRule ^lib/.*\.php$ - [R=403,L,NC]
+RewriteRule ^lib/(_logs|_tokens)/ - [R=403,L,NC]
 RewriteRule ^vendor/ - [R=403,L,NC]
 RewriteRule ^data/ - [R=403,L,NC]
 RewriteRule ^up/.*\.php$ - [R=403,L,NC]

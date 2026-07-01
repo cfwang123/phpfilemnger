@@ -1,9 +1,9 @@
 /设计原型
 /fontawesome
 /up
-*.db
 *.lock
 /lib/_tokens/
+/lib/_logs/
 AGENTS.md
 *.7z
 *.zip

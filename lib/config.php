@@ -12,4 +12,7 @@ return array(
 		array('name' => 'admin', 'pass' => '123456', 'level' => 'admin'),
 		array('name' => 'user', 'pass' => '123456', 'level' => 'normal'),
 	),
+	'params' => array(
+		// 键值对参数，通过 param_get('key') 读取
+	),
 );
