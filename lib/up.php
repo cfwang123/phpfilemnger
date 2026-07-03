@@ -51,7 +51,7 @@ function up_file($dirRel) {
 
 		$nameFs = file_tofspath($name);
 		$dst = $absDir . '/' . $nameFs;
-		$dst = file_uniquepath($dst);
+
 		if (move_uploaded_file($tmp, $dst)) {
 			$results[] = array('name' => $name, 'ok' => true, 'size' => $size);
 			$okCount++;
