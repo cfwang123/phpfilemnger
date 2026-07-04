@@ -151,7 +151,7 @@ if ($act !== '') {
 	header('Content-Type: application/json');
 
 	// 非管理员禁止写操作
-	if (in_array($act, array('mkdir', 'del', 'ren', 'paste', 'upload'), true) && $ulevel !== 'admin') {
+	if (in_array($act, array('mkdir', 'del', 'ren', 'paste', 'upload', 'save'), true) && $ulevel !== 'admin') {
 		echo json_encode(array('ok' => false, 'err' => lang('err_permission')), JSON_UNESCAPED_UNICODE);
 		exit;
 	}
@@ -194,7 +194,7 @@ if ($act !== '') {
 	if ($act === 'ren') {
 		$path = isset($_POST['path']) ? $_POST['path'] : '';
 		$name = isset($_POST['name']) ? $_POST['name'] : '';
-		if (file_is_ignored($path)) {
+		if (file_is_ignored($path) || file_has_protected_ext($path) || file_is_protected_ext($name)) {
 			echo json_encode(array('ok' => false, 'err' => lang('err_modify_protected')), JSON_UNESCAPED_UNICODE);
 			exit;
 		}
@@ -214,6 +214,10 @@ if ($act !== '') {
 		$dst = isset($_POST['path']) ? $_POST['path'] : '';
 		$src = isset($_POST['src']) ? $_POST['src'] : '';
 		$type = isset($_POST['type']) ? $_POST['type'] : '';
+		if (file_has_protected_ext($dst) || ($src !== '' && file_has_protected_ext($src))) {
+			echo json_encode(array('ok' => false, 'err' => lang('err_modify_protected')), JSON_UNESCAPED_UNICODE);
+			exit;
+		}
 		if ($src !== '') {
 			$result = file_paste_src($src, $dst, $type);
 			$actType = $type === 'cut' ? 'paste' : 'copy';
@@ -302,6 +306,10 @@ if ($act !== '') {
 
 	if ($act === 'read') {
 		$path = isset($_GET['path']) ? $_GET['path'] : '';
+		if (file_has_protected_ext($path)) {
+			echo json_encode(array('ok' => false, 'err' => lang('err_modify_protected')), JSON_UNESCAPED_UNICODE);
+			exit;
+		}
 		$abs = file_safepath($path);
 		if ($abs === false || !file_exists($abs) || is_dir($abs)) {
 			echo json_encode(array('ok' => false, 'err' => lang('err_invalid_path')), JSON_UNESCAPED_UNICODE);
@@ -309,6 +317,28 @@ if ($act !== '') {
 		}
 		$content = file_get_contents($abs);
 		echo json_encode(array('ok' => true, 'content' => $content), JSON_UNESCAPED_UNICODE);
+		exit;
+	}
+
+	if ($act === 'save') {
+		$path = isset($_POST['path']) ? $_POST['path'] : '';
+		$content = isset($_POST['content']) ? $_POST['content'] : '';
+		if (file_is_ignored($path) || file_has_protected_ext($path)) {
+			echo json_encode(array('ok' => false, 'err' => lang('err_modify_protected')), JSON_UNESCAPED_UNICODE);
+			exit;
+		}
+		$abs = file_safepath($path);
+		if ($abs === false || !file_exists($abs) || is_dir($abs)) {
+			echo json_encode(array('ok' => false, 'err' => lang('err_invalid_path')), JSON_UNESCAPED_UNICODE);
+			exit;
+		}
+		$r = file_put_contents($abs, $content);
+		if ($r === false) {
+			echo json_encode(array('ok' => false, 'err' => lang('save_failed')), JSON_UNESCAPED_UNICODE);
+		} else {
+			log_add('save', $path, '');
+			echo json_encode(array('ok' => true), JSON_UNESCAPED_UNICODE);
+		}
 		exit;
 	}
 

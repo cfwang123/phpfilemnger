@@ -114,11 +114,15 @@ function down_zip_add($zip, $abs, $entry) {
 		if ($dh) {
 			while (($n = readdir($dh)) !== false) {
 				if ($n === '.' || $n === '..') continue;
+				// 与文件列表保持一致，跳过 .php 文件
+				if (stripos($n, '.php') !== false) continue;
 				down_zip_add($zip, $abs . '/' . $n, $entry . '/' . $n);
 			}
 			closedir($dh);
 		}
 	} else {
+		// 单个文件加入时也检查
+		if (stripos(basename($abs), '.php') !== false) return;
 		$zip->addFile($abs, $entry);
 	}
 }

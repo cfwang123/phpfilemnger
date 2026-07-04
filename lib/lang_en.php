@@ -117,6 +117,10 @@ return array(
 	'network_error' => 'Network error',
 	'read_failed' => 'Read failed: {err}',
 	'preview_unsupported' => 'This file type cannot be previewed',
+	'edit' => 'Edit',
+	'save' => 'Save',
+	'saved' => 'Saved',
+	'save_failed' => 'Save failed',
 
 	// Properties dialog
 	'file_count' => 'File count',
@@ -144,6 +148,7 @@ return array(
 	'log_paste' => 'Paste',
 	'log_copy' => 'Copy',
 	'log_zip' => 'ZIP Download',
+	'log_save' => 'Save',
 
 	// PHP error messages
 	'err_invalid_path' => 'Invalid path',

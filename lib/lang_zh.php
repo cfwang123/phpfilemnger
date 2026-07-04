@@ -117,6 +117,10 @@ return array(
 	'network_error' => '网络错误',
 	'read_failed' => '读取失败: {err}',
 	'preview_unsupported' => '暂不支持预览此文件类型',
+	'edit' => '编辑',
+	'save' => '保存',
+	'saved' => '已保存',
+	'save_failed' => '保存失败',
 
 	// 属性对话框
 	'file_count' => '文件数',
@@ -144,6 +148,7 @@ return array(
 	'log_paste' => '粘贴',
 	'log_copy' => '复制',
 	'log_zip' => 'ZIP下载',
+	'log_save' => '保存',
 
 	// PHP 错误消息
 	'err_invalid_path' => '无效路径',

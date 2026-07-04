@@ -101,6 +101,28 @@ function file_is_ignored($rel) {
 	return in_array($first, file_ignore_list());
 }
 
+function file_is_protected_ext($name) {
+	$name = trim((string)$name);
+	if ($name === '') return false;
+	$name = basename(str_replace('\\', '/', $name));
+	$lower = strtolower($name);
+	if ($lower === '.htaccess') return true;
+	$ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+	if ($ext === '') return false;
+	return in_array($ext, array('php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'phar', 'htaccess'), true);
+}
+
+function file_has_protected_ext($rel) {
+	$rel = str_replace('\\', '/', $rel);
+	$rel = trim($rel, '/');
+	if ($rel === '') return false;
+	$parts = explode('/', $rel);
+	foreach ($parts as $part) {
+		if (file_is_protected_ext($part)) return true;
+	}
+	return false;
+}
+
 // 列出目录
 function file_list($rel, $ignore = array()) {
 	$abs = file_safepath($rel);
@@ -190,6 +212,7 @@ function file_del_byabs($abs) {
 function file_ren($rel, $newname) {
 	$newname = file_safename($newname);
 	if ($newname === '') return false;
+	if (file_has_protected_ext($rel) || file_is_protected_ext($newname)) return false;
 	$abs = file_safepath($rel);
 	if ($abs === false) return false;
 	if (!file_exists($abs)) return false;
@@ -223,6 +246,7 @@ function file_paste($rel) {
 
 // 粘贴（直接指定源路径，前端无需设置 session）
 function file_paste_src($srcRel, $dstRel, $type) {
+	if (file_has_protected_ext($srcRel) || file_has_protected_ext($dstRel)) return false;
 	$srcAbs = file_safepath($srcRel);
 	$dstAbs = file_safepath($dstRel);
 	if ($srcAbs === false || $dstAbs === false) return false;

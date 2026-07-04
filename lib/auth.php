@@ -2,7 +2,21 @@
 // 用户认证
 
 function auth_init() {
-	if (session_status() === PHP_SESSION_NONE) session_start();
+	if (session_status() === PHP_SESSION_NONE) {
+		// 延长 session 生命周期为 7 天，避免频繁重新登录
+		$lifetime = 86400 * 7; // 7 天
+		ini_set('session.gc_maxlifetime', $lifetime);
+		session_set_cookie_params($lifetime, '/', '', false, true);
+		session_start();
+		// 定期刷新 session 的存活时间
+		if (isset($_SESSION['_CREATED'])) {
+			if (time() - $_SESSION['_CREATED'] > 86400) {
+				$_SESSION['_CREATED'] = time();
+			}
+		} else {
+			$_SESSION['_CREATED'] = time();
+		}
+	}
 	require_once __DIR__ . '/conf.php';
 }
 
